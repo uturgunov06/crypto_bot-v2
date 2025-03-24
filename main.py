@@ -1,4 +1,3 @@
-
 import asyncio
 import os
 from aiohttp import web
@@ -22,19 +21,24 @@ async def handle(request):
     await dp.feed_update(bot, update)
     return web.Response()
 
+async def on_startup(app):
+    await bot.set_webhook(WEBHOOK_URL)
+
 async def main():
-    webhook_path = f"/{BOT_TOKEN}"
-    await bot.set_webhook(WEBHOOK_URL + BOT_TOKEN)
+    await bot.delete_webhook(drop_pending_updates=True)
+    await bot.set_webhook(WEBHOOK_URL)
 
     app = web.Application()
-    app.router.add_post(webhook_path, handle)
+    app.router.add_post("/webhook", handle)
+    app.on_startup.append(on_startup)
 
     runner = web.AppRunner(app)
     await runner.setup()
-    site = web.TCPSite(runner, "0.0.0.0", port=int(os.environ.get("PORT", 8080)))
+    site = web.TCPSite(runner, "0.0.0.0", port=10000)
     await site.start()
-    print("🌐 Webhook сервер запущен!")
-    await asyncio.Event().wait()
+
+    while True:
+        await asyncio.sleep(3600)
 
 if __name__ == "__main__":
     asyncio.run(main())
