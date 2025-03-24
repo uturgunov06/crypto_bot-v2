@@ -1,44 +1,34 @@
 import asyncio
 import os
-from aiohttp import web
 from aiogram import Bot, Dispatcher, types
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+from dotenv import load_dotenv
+
+load_dotenv()  # Загружаем переменные из .env
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 
 bot = Bot(token=BOT_TOKEN, parse_mode=ParseMode.HTML)
 dp = Dispatcher(storage=MemoryStorage())
 
 @dp.message(lambda message: message.text == "/start")
 async def start(message: types.Message):
-    await message.answer("👋 Привет! Я работаю через Webhook на Render!")
+    keyboard = ReplyKeyboardMarkup(keyboard=[
+        [KeyboardButton(text="\ud83d\udcc8 График"), KeyboardButton(text="\ud83d\udcca Анализ")],
+        [KeyboardButton(text="\ud83e\udde0 Совет"), KeyboardButton(text="\u2139\ufe0f Помощь")]
+    ], resize_keyboard=True)
 
-async def handle(request):
-    data = await request.json()
-    update = types.Update(**data)
-    await dp.feed_update(bot, update)
-    return web.Response()
+    await message.answer("\ud83d\udc4b Привет! Я бот по крипте. Что тебя интересует?", reply_markup=keyboard)
 
-async def on_startup(app):
-    await bot.set_webhook(WEBHOOK_URL)
+@dp.message()
+async def echo(message: types.Message):
+    await message.answer("Ты нажал: " + message.text)
 
 async def main():
-    await bot.delete_webhook(drop_pending_updates=True)
-    await bot.set_webhook(WEBHOOK_URL)
-
-    app = web.Application()
-    app.router.add_post("/webhook", handle)
-    app.on_startup.append(on_startup)
-
-    runner = web.AppRunner(app)
-    await runner.setup()
-    site = web.TCPSite(runner, "0.0.0.0", port=10000)
-    await site.start()
-
-    while True:
-        await asyncio.sleep(3600)
+    print("\u2705 Бот запущен в режиме polling")
+    await dp.start_polling(bot)
 
 if __name__ == "__main__":
     asyncio.run(main())
