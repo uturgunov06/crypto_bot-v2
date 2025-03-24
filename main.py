@@ -54,8 +54,11 @@ async def handle_graph_button(message: types.Message):
     await message.answer("Выбери монету для графика:", reply_markup=markup)
 
 if __name__ == "__main__":
+    import asyncio
+    from os import getenv
+
     async def main():
-        await bot.delete_webhook(drop_pending_updates=True)
+        await bot.set_webhook(getenv("WEBHOOK_URL"))  # <- ВАЖНО
         await dp.start_polling(bot)
 
     asyncio.run(main())
